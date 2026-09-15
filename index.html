@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reward Chart</title>
+<style>
+  :root {
+    --pink: #ff8fab;
+    --purple: #b388e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+    background: linear-gradient(135deg, #ffe1f0, #e0f7ff);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* ---------- Password gate ---------- */
+  #gate {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    max-width: 360px;
+    width: 100%;
+  }
+  #gate h1 {
+    color: var(--pink);
+    font-size: 1.8em;
+    margin-top: 0;
+  }
+  #gate input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    border: 2px solid var(--purple);
+    border-radius: 10px;
+    margin-top: 15px;
+    text-align: center;
+  }
+  #gate button {
+    margin-top: 15px;
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 10px;
+    background: var(--pink);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #gate button:hover { background: #ff6f91; }
+  #error {
+    color: red;
+    margin-top: 10px;
+    font-size: 0.9em;
+    display: none;
+  }
+
+  /* ---------- Chart wrapper ---------- */
+  #chart-wrapper {
+    display: none;
+    max-width: 900px;
+    width: 100%;
+  }
+  .chart-container {
+    position: relative;
+    width: 100%;
+  }
+  .chart-container img {
+    width: 100%;
+    display: block;
+    border-radius: 10px;
+  }
+  .cell {
+    position: absolute;
+    overflow: auto;
+    outline: none;
+    padding: 2px 6px;
+    font-size: 1.1vw;
+    line-height: 1.2;
+    color: #444;
+    background: transparent;
+    cursor: text;
+  }
+  .cell:focus {
+    background: rgba(255, 255, 200, 0.55);
+    border-radius: 4px;
+  }
+  .cell.footer-cell {
+    color: white;
+    font-weight: bold;
+  }
+  .name-cell {
+    color: #cc3366;
+    font-weight: bold;
+  }
+
+  #controls {
+    text-align: center;
+    margin-top: 15px;
+  }
+  #controls button {
+    padding: 8px 16px;
+    margin: 0 6px;
+    border: none;
+    border-radius: 8px;
+    background: var(--purple);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #controls button:hover { background: #9d6fd8; }
+  #saveStatus {
+    text-align: center;
+    color: #666;
+    font-size: 0.85em;
+    margin-top: 6px;
+    height: 1em;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Password Gate -->
+  <div id="gate">
+    <h1>🦄 Reward Chart</h1>
+    <p>Enter the password to view and edit the chart.</p>
+    <input type="password" id="pw" placeholder="Password" onkeydown="if(event.key==='Enter') checkPassword()">
+    <button onclick="checkPassword()">Enter</button>
+    <div id="error">Wrong password, try again!</div>
+  </div>
+
+  <!-- Chart -->
+  <div id="chart-wrapper">
+    <div class="chart-container">
+      <img src="chart-bg.png" alt="Reward Chart Background">
+
+      <!-- Name field -->
+      <div class="cell name-cell" contenteditable="true" data-key="name"
+           style="left: 71%; top: 17.5%; width: 20%; height: 4%; font-size: 1.4vw;"></div>
+
+      <!-- Day rows (8 rows x 7 days) -->
+      <!-- Column left offsets (%): Mon 26.0, Tue 36.3, Wed 46.6, Thu 56.9, Fri 67.2, Sat 77.5, Sun 87.8 ; width ~10.2% each -->
+      <!-- Row top offsets (%): rows start ~30.5 and each ~7.4% tall, 8 rows -->
+    </div>
+
+    <div id="controls">
+      <button onclick="saveData()">💾 Save</button>
+      <button onclick="clearData()">🗑️ Clear All</button>
+      <button onclick="lockChart()">🔒 Lock</button>
+    </div>
+    <div id="saveStatus"></div>
+  </div>
+
+<script>
+  // ---- CHANGE YOUR PASSWORD HERE ----
+  const PASSWORD = "unicorn123";
+
+  function checkPassword() {
+    const val = document.getElementById('pw').value;
+    if (val === PASSWORD) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('chart-wrapper').style.display = 'block';
+      sessionStorage.setItem('unlocked', 'yes');
+      loadData();
+    } else {
+      document.getElementById('error').style.display = 'block';
+    }
+  }
+
+  function lockChart() {
+    sessionStorage.removeItem('unlocked');
+    document.getElementById('chart-wrapper').style.display = 'none';
+    document.getElementById('gate').style.display = 'block';
+    document.getElementById('pw').value = '';
+  }
+
+  // Auto-generate the 7x8 grid of editable cells + footer cells
+  const container = document.querySelector('.chart-container');
+
+  const days = ['mon','tue','wed','thu','fri','sat','sun'];
+  const colLeft = [26.0, 36.3, 46.6, 56.9, 67.2, 77.5, 87.8]; // % left offset per day column
+  const colWidth = 10.2; // % width per column
+  const rowTop = 30.3;   // % top offset of first row
+  const rowHeight = 7.35; // % height per row
+  const numRows = 8;
+
+  for (let r = 0; r < numRows; r++) {
+    for (let c = 0; c < days.length; c++) {
+      const div = document.createElement('div');
+      div.className = 'cell';
+      div.contentEditable = 'true';
+      div.dataset.key = `${days[c]}_${r}`;
+      div.style.left = colLeft[c] + '%';
+      div.style.top = (rowTop + r * rowHeight) + '%';
+      div.style.width = colWidth + '%';
+      div.style.height = rowHeight + '%';
+      container.appendChild(div);
+    }
+  }
+
+  // Footer cells: Reward, Goal, Total
+  const footer = [
+    { key: 'reward', left: 4, top: 91.5, width: 37 },
+    { key: 'goal',   left: 43, top: 91.5, width: 27 },
+    { key: 'total',  left: 72, top: 91.5, width: 24 }
+  ];
+  footer.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'cell footer-cell';
+    div.contentEditable = 'true';
+    div.dataset.key = f.key;
+    div.style.left = f.left + '%';
+    div.style.top = f.top + '%';
+    div.style.width = f.width + '%';
+    div.style.height = '6%';
+    container.appendChild(div);
+  });
+
+  // ---- Save / load using localStorage ----
+  function getAllCells() {
+    return document.querySelectorAll('.cell');
+  }
+
+  function saveData() {
+    const data = {};
+    getAllCells().forEach(cell => {
+      data[cell.dataset.key] = cell.innerText;
+    });
+    localStorage.setItem('rewardChartData', JSON.stringify(data));
+    const status = document.getElementById('saveStatus');
+    status.textContent = 'Saved!';
+    setTimeout(() => status.textContent = '', 1500);
+  }
+
+  function loadData() {
+    const raw = localStorage.getItem('rewardChartData');
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      getAllCells().forEach(cell => {
+        if (data[cell.dataset.key] !== undefined) {
+          cell.innerText = data[cell.dataset.key];
+        }
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  function clearData() {
+    if (!confirm('Clear all entries? This cannot be undone.')) return;
+    localStorage.removeItem('rewardChartData');
+    getAllCells().forEach(cell => cell.innerText = '');
+  }
+
+  // Auto-save periodically as a convenience
+  setInterval(saveData, 5000);
+
+  // If already unlocked this session, skip the gate
+  window.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('unlocked') === 'yes') {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('chart-wrapper').style.display = 'block';
+      loadData();
+    }
+  });
+</script>
+
+</body>
+</html>
