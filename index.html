@@ -31,101 +31,109 @@
     max-width: 360px;
     width: 100%;
   }
-  #gate h1 {
-    color: var(--pink);
-    font-size: 1.8em;
-    margin-top: 0;
-  }
+  #gate h1 { color: var(--pink); font-size: 1.8em; margin-top: 0; }
   #gate input {
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1em;
-    border: 2px solid var(--purple);
-    border-radius: 10px;
-    margin-top: 15px;
-    text-align: center;
+    width: 100%; padding: 12px; font-size: 1.1em;
+    border: 2px solid var(--purple); border-radius: 10px; margin-top: 15px; text-align: center;
   }
   #gate button {
-    margin-top: 15px;
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1em;
-    border: none;
-    border-radius: 10px;
-    background: var(--pink);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
+    margin-top: 15px; width: 100%; padding: 12px; font-size: 1.1em;
+    border: none; border-radius: 10px; background: var(--pink); color: white;
+    font-weight: bold; cursor: pointer;
   }
   #gate button:hover { background: #ff6f91; }
-  #error {
-    color: red;
-    margin-top: 10px;
-    font-size: 0.9em;
-    display: none;
-  }
+  #error { color: red; margin-top: 10px; font-size: 0.9em; display: none; }
 
   /* ---------- Chart wrapper ---------- */
-  #chart-wrapper {
-    display: none;
-    max-width: 900px;
-    width: 100%;
+  #chart-wrapper { display: none; max-width: 900px; width: 100%; }
+
+  #toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin-bottom: 12px;
   }
+  #toolbar button, .upload-btn {
+    padding: 10px 16px; border: none; border-radius: 8px;
+    background: var(--purple); color: white; font-weight: bold;
+    cursor: pointer; font-family: inherit; font-size: 0.95em;
+  }
+  #toolbar button:hover, .upload-btn:hover { background: #9d6fd8; }
+  .upload-btn { display: inline-block; }
+  #toolbar button.danger { background: #e35d6a; }
+  #toolbar button.danger:hover { background: #c94854; }
+
   .chart-container {
     position: relative;
     width: 100%;
-  }
-  .chart-container img {
-    width: 100%;
-    display: block;
+    user-select: none;
+    touch-action: none;
     border-radius: 10px;
+    overflow: hidden;
   }
-  .cell {
+  .chart-container img.bg { width: 100%; display: block; pointer-events: none; }
+
+  /* ---------- Freeform elements ---------- */
+  .elem {
     position: absolute;
-    overflow: auto;
-    outline: none;
+    border: 2px dashed transparent;
+    min-width: 30px;
+    min-height: 24px;
+  }
+  .elem:hover, .elem.active { border-color: var(--purple); }
+
+  .elem-toolbar {
+    position: absolute;
+    top: -30px; left: 0;
+    display: none;
+    gap: 4px;
+    background: white;
+    border-radius: 6px;
+    padding: 3px 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .elem:hover .elem-toolbar, .elem.active .elem-toolbar { display: flex; }
+  .elem-toolbar button {
+    border: none; background: #f0f0f0; border-radius: 4px;
+    width: 24px; height: 24px; font-size: 12px; cursor: pointer; padding: 0;
+  }
+  .elem-toolbar button:hover { background: #e0e0e0; }
+  .elem-toolbar .drag-handle { cursor: grab; background: #ffe08a; }
+  .elem-toolbar .del-btn { background: #ffb3b3; }
+  .elem-toolbar .del-btn:hover { background: #ff8f8f; }
+
+  .elem-content {
+    width: 100%; height: 100%;
     padding: 2px 6px;
-    font-size: 1.1vw;
+    outline: none;
+    overflow: auto;
+    color: #333;
     line-height: 1.2;
-    color: #444;
-    background: transparent;
     cursor: text;
   }
-  .cell:focus {
-    background: rgba(255, 255, 200, 0.55);
-    border-radius: 4px;
-  }
-  .cell.footer-cell {
-    color: white;
-    font-weight: bold;
-  }
-  .name-cell {
-    color: #cc3366;
-    font-weight: bold;
+  .sticker-elem img {
+    width: 100%; height: 100%; object-fit: contain; pointer-events: none;
+    display: block;
   }
 
-  #controls {
-    text-align: center;
-    margin-top: 15px;
-  }
-  #controls button {
-    padding: 8px 16px;
-    margin: 0 6px;
-    border: none;
-    border-radius: 8px;
+  .resize-handle {
+    position: absolute;
+    right: -6px; bottom: -6px;
+    width: 14px; height: 14px;
     background: var(--purple);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    font-family: inherit;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    display: none;
+    z-index: 10;
   }
-  #controls button:hover { background: #9d6fd8; }
+  .elem:hover .resize-handle, .elem.active .resize-handle { display: block; }
+
   #saveStatus {
-    text-align: center;
-    color: #666;
-    font-size: 0.85em;
-    margin-top: 6px;
-    height: 1em;
+    text-align: center; color: #666; font-size: 0.85em; margin-top: 8px; height: 1em;
+  }
+  #hint {
+    text-align: center; color: #888; font-size: 0.8em; margin-top: 2px;
   }
 </style>
 </head>
@@ -142,135 +150,329 @@
 
   <!-- Chart -->
   <div id="chart-wrapper">
-    <div class="chart-container">
-      <img src="chart-bg.png" alt="Reward Chart Background">
-
-      <!-- Name field -->
-      <div class="cell name-cell" contenteditable="true" data-key="name"
-           style="left: 71%; top: 17.5%; width: 20%; height: 4%; font-size: 1.4vw;"></div>
-
-      <!-- Day rows (8 rows x 7 days) -->
-      <!-- Column left offsets (%): Mon 26.0, Tue 36.3, Wed 46.6, Thu 56.9, Fri 67.2, Sat 77.5, Sun 87.8 ; width ~10.2% each -->
-      <!-- Row top offsets (%): rows start ~30.5 and each ~7.4% tall, 8 rows -->
+    <div id="toolbar">
+      <button id="addTextBtn">✏️ Add Text</button>
+      <label class="upload-btn">🌟 Add Sticker
+        <input type="file" id="stickerInput" accept="image/*" style="display:none">
+      </label>
+      <button id="saveBtn">💾 Save</button>
+      <button id="clearBtn" class="danger">🗑️ Clear All</button>
+      <button id="lockBtn">🔒 Lock</button>
     </div>
 
-    <div id="controls">
-      <button onclick="saveData()">💾 Save</button>
-      <button onclick="clearData()">🗑️ Clear All</button>
-      <button onclick="lockChart()">🔒 Lock</button>
+    <div class="chart-container" id="canvas">
+      <img class="bg" src="chart-bg.png" alt="Reward Chart Background">
+      <!-- freeform elements injected here by JS -->
     </div>
+
+    <div id="hint">Tap a box's yellow handle to move it, drag the purple dot to resize, use A+/A- to change text size.</div>
     <div id="saveStatus"></div>
   </div>
 
 <script>
   // ---- CHANGE YOUR PASSWORD HERE ----
   const PASSWORD = "unicorn123";
+  const STORAGE_KEY = "rewardChartFreeformV1";
+
+  const gate = document.getElementById('gate');
+  const wrapper = document.getElementById('chart-wrapper');
+  const canvas = document.getElementById('canvas');
 
   function checkPassword() {
     const val = document.getElementById('pw').value;
     if (val === PASSWORD) {
-      document.getElementById('gate').style.display = 'none';
-      document.getElementById('chart-wrapper').style.display = 'block';
+      gate.style.display = 'none';
+      wrapper.style.display = 'block';
       sessionStorage.setItem('unlocked', 'yes');
-      loadData();
+      init();
     } else {
       document.getElementById('error').style.display = 'block';
     }
   }
 
   function lockChart() {
+    saveData();
     sessionStorage.removeItem('unlocked');
-    document.getElementById('chart-wrapper').style.display = 'none';
-    document.getElementById('gate').style.display = 'block';
+    wrapper.style.display = 'none';
+    gate.style.display = 'block';
     document.getElementById('pw').value = '';
   }
+  document.getElementById('lockBtn').addEventListener('click', lockChart);
 
-  // Auto-generate the 7x8 grid of editable cells + footer cells
-  const container = document.querySelector('.chart-container');
+  // ---------------- Data model ----------------
+  // elements: [{id, type:'text'|'sticker', xPct, yPct, wPct, hPct, fontPct (text only), text (text only), src (sticker only)}]
+  let elements = [];
+  let idCounter = 1;
 
-  const days = ['mon','tue','wed','thu','fri','sat','sun'];
-  const colLeft = [26.0, 36.3, 46.6, 56.9, 67.2, 77.5, 87.8]; // % left offset per day column
-  const colWidth = 10.2; // % width per column
-  const rowTop = 30.3;   // % top offset of first row
-  const rowHeight = 7.35; // % height per row
-  const numRows = 8;
+  function uid() { return 'el' + (idCounter++) + '_' + Date.now(); }
 
-  for (let r = 0; r < numRows; r++) {
-    for (let c = 0; c < days.length; c++) {
-      const div = document.createElement('div');
-      div.className = 'cell';
-      div.contentEditable = 'true';
-      div.dataset.key = `${days[c]}_${r}`;
-      div.style.left = colLeft[c] + '%';
-      div.style.top = (rowTop + r * rowHeight) + '%';
-      div.style.width = colWidth + '%';
-      div.style.height = rowHeight + '%';
-      container.appendChild(div);
+  function loadData() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        elements = JSON.parse(raw);
+      } catch (e) { elements = []; }
     }
-  }
-
-  // Footer cells: Reward, Goal, Total
-  const footer = [
-    { key: 'reward', left: 4, top: 91.5, width: 37 },
-    { key: 'goal',   left: 43, top: 91.5, width: 27 },
-    { key: 'total',  left: 72, top: 91.5, width: 24 }
-  ];
-  footer.forEach(f => {
-    const div = document.createElement('div');
-    div.className = 'cell footer-cell';
-    div.contentEditable = 'true';
-    div.dataset.key = f.key;
-    div.style.left = f.left + '%';
-    div.style.top = f.top + '%';
-    div.style.width = f.width + '%';
-    div.style.height = '6%';
-    container.appendChild(div);
-  });
-
-  // ---- Save / load using localStorage ----
-  function getAllCells() {
-    return document.querySelectorAll('.cell');
+    render();
   }
 
   function saveData() {
-    const data = {};
-    getAllCells().forEach(cell => {
-      data[cell.dataset.key] = cell.innerText;
+    // pull latest text content from DOM before saving
+    document.querySelectorAll('.elem.text-elem').forEach(node => {
+      const id = node.dataset.id;
+      const el = elements.find(e => e.id === id);
+      if (el) {
+        const contentDiv = node.querySelector('.elem-content');
+        el.text = contentDiv.innerHTML;
+      }
     });
-    localStorage.setItem('rewardChartData', JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(elements));
     const status = document.getElementById('saveStatus');
-    status.textContent = 'Saved!';
-    setTimeout(() => status.textContent = '', 1500);
-  }
-
-  function loadData() {
-    const raw = localStorage.getItem('rewardChartData');
-    if (!raw) return;
-    try {
-      const data = JSON.parse(raw);
-      getAllCells().forEach(cell => {
-        if (data[cell.dataset.key] !== undefined) {
-          cell.innerText = data[cell.dataset.key];
-        }
-      });
-    } catch (e) { console.error(e); }
+    status.textContent = 'Saved ✓';
+    setTimeout(() => { if (status.textContent === 'Saved ✓') status.textContent = ''; }, 1200);
   }
 
   function clearData() {
-    if (!confirm('Clear all entries? This cannot be undone.')) return;
-    localStorage.removeItem('rewardChartData');
-    getAllCells().forEach(cell => cell.innerText = '');
+    if (!confirm('Delete everything you\'ve written and all stickers? This cannot be undone.')) return;
+    elements = [];
+    saveData();
+    render();
+  }
+  document.getElementById('clearBtn').addEventListener('click', clearData);
+  document.getElementById('saveBtn').addEventListener('click', saveData);
+
+  // ---------------- Rendering ----------------
+  function render() {
+    canvas.querySelectorAll('.elem').forEach(n => n.remove());
+    elements.forEach(el => canvas.appendChild(buildNode(el)));
   }
 
-  // Auto-save periodically as a convenience
-  setInterval(saveData, 5000);
+  function buildNode(el) {
+    const node = document.createElement('div');
+    node.className = 'elem ' + (el.type === 'text' ? 'text-elem' : 'sticker-elem');
+    node.dataset.id = el.id;
+    node.style.left = el.xPct + '%';
+    node.style.top = el.yPct + '%';
+    node.style.width = el.wPct + '%';
+    node.style.height = el.hPct + '%';
 
-  // If already unlocked this session, skip the gate
+    const tb = document.createElement('div');
+    tb.className = 'elem-toolbar';
+
+    const dragHandle = document.createElement('button');
+    dragHandle.className = 'drag-handle';
+    dragHandle.textContent = '✥';
+    dragHandle.title = 'Drag to move';
+    tb.appendChild(dragHandle);
+
+    if (el.type === 'text') {
+      const decBtn = document.createElement('button');
+      decBtn.textContent = 'A-';
+      decBtn.title = 'Smaller text';
+      decBtn.addEventListener('click', () => {
+        el.fontPct = Math.max(0.8, (el.fontPct || 2.5) - 0.4);
+        applyFont(node, el);
+        saveData();
+      });
+      const incBtn = document.createElement('button');
+      incBtn.textContent = 'A+';
+      incBtn.title = 'Bigger text';
+      incBtn.addEventListener('click', () => {
+        el.fontPct = Math.min(12, (el.fontPct || 2.5) + 0.4);
+        applyFont(node, el);
+        saveData();
+      });
+      tb.appendChild(decBtn);
+      tb.appendChild(incBtn);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Delete';
+    delBtn.addEventListener('click', () => {
+      elements = elements.filter(e => e.id !== el.id);
+      node.remove();
+      saveData();
+    });
+    tb.appendChild(delBtn);
+    node.appendChild(tb);
+
+    if (el.type === 'text') {
+      const content = document.createElement('div');
+      content.className = 'elem-content';
+      content.contentEditable = 'true';
+      content.innerHTML = el.text || '';
+      content.addEventListener('input', () => { el.text = content.innerHTML; });
+      content.addEventListener('blur', saveData);
+      node.appendChild(content);
+      applyFont(node, el);
+    } else {
+      const img = document.createElement('img');
+      img.src = el.src;
+      node.appendChild(img);
+    }
+
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    node.appendChild(handle);
+
+    setupDrag(node, el, dragHandle);
+    setupResize(node, el, handle);
+
+    node.addEventListener('mousedown', () => setActive(node));
+    node.addEventListener('touchstart', () => setActive(node), { passive: true });
+
+    return node;
+  }
+
+  function setActive(node) {
+    document.querySelectorAll('.elem.active').forEach(n => { if (n !== node) n.classList.remove('active'); });
+    node.classList.add('active');
+  }
+
+  function applyFont(node, el) {
+    const pct = el.fontPct || 2.5;
+    const px = Math.max(10, canvas.offsetWidth * (pct / 100));
+    const content = node.querySelector('.elem-content');
+    if (content) content.style.fontSize = px + 'px';
+  }
+
+  function refreshAllFonts() {
+    document.querySelectorAll('.elem.text-elem').forEach(node => {
+      const el = elements.find(e => e.id === node.dataset.id);
+      if (el) applyFont(node, el);
+    });
+  }
+  window.addEventListener('resize', refreshAllFonts);
+
+  // ---------------- Drag ----------------
+  function setupDrag(node, el, handleEl) {
+    handleEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setActive(node);
+      const rect = canvas.getBoundingClientRect();
+      const startX = e.clientX, startY = e.clientY;
+      const startLeftPct = el.xPct, startTopPct = el.yPct;
+
+      function onMove(ev) {
+        const dxPct = ((ev.clientX - startX) / rect.width) * 100;
+        const dyPct = ((ev.clientY - startY) / rect.height) * 100;
+        el.xPct = Math.min(100 - el.wPct, Math.max(0, startLeftPct + dxPct));
+        el.yPct = Math.min(100 - el.hPct, Math.max(0, startTopPct + dyPct));
+        node.style.left = el.xPct + '%';
+        node.style.top = el.yPct + '%';
+      }
+      function onUp() {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        saveData();
+      }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  }
+
+  // ---------------- Resize ----------------
+  function setupResize(node, el, handleEl) {
+    handleEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setActive(node);
+      const rect = canvas.getBoundingClientRect();
+      const startX = e.clientX, startY = e.clientY;
+      const startW = el.wPct, startH = el.hPct;
+
+      function onMove(ev) {
+        const dwPct = ((ev.clientX - startX) / rect.width) * 100;
+        const dhPct = ((ev.clientY - startY) / rect.height) * 100;
+        el.wPct = Math.max(4, Math.min(100 - el.xPct, startW + dwPct));
+        el.hPct = Math.max(3, Math.min(100 - el.yPct, startH + dhPct));
+        node.style.width = el.wPct + '%';
+        node.style.height = el.hPct + '%';
+        if (el.type === 'text') applyFont(node, el);
+      }
+      function onUp() {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        saveData();
+      }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  }
+
+  // ---------------- Add elements ----------------
+  document.getElementById('addTextBtn').addEventListener('click', () => {
+    const el = {
+      id: uid(), type: 'text',
+      xPct: 35, yPct: 45, wPct: 30, hPct: 8,
+      fontPct: 2.5, text: 'Type here...'
+    };
+    elements.push(el);
+    const node = buildNode(el);
+    canvas.appendChild(node);
+    setActive(node);
+    const content = node.querySelector('.elem-content');
+    content.focus();
+    document.execCommand('selectAll', false, null);
+    saveData();
+  });
+
+  document.getElementById('stickerInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const src = evt.target.result;
+      const img = new Image();
+      img.onload = () => {
+        const canvasRect = canvas.getBoundingClientRect();
+        const wPct = 15;
+        const wPx = canvasRect.width * (wPct / 100);
+        const hPx = wPx * (img.height / img.width);
+        const hPct = (hPx / canvasRect.height) * 100;
+        const el = {
+          id: uid(), type: 'sticker',
+          xPct: 40, yPct: 40, wPct: wPct, hPct: hPct,
+          src: src
+        };
+        elements.push(el);
+        const node = buildNode(el);
+        canvas.appendChild(node);
+        setActive(node);
+        saveData();
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  // click empty canvas area deselects
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.target === canvas || e.target.classList.contains('bg')) {
+      document.querySelectorAll('.elem.active').forEach(n => n.classList.remove('active'));
+    }
+  });
+
+  // ---------------- Save on close / tab hide ----------------
+  window.addEventListener('beforeunload', saveData);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveData();
+  });
+  setInterval(saveData, 8000);
+
+  function init() {
+    loadData();
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('unlocked') === 'yes') {
-      document.getElementById('gate').style.display = 'none';
-      document.getElementById('chart-wrapper').style.display = 'block';
-      loadData();
+      gate.style.display = 'none';
+      wrapper.style.display = 'block';
+      init();
     }
   });
 </script>
